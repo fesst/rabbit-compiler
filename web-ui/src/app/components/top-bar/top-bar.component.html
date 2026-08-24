@@ -1,0 +1,10 @@
+<header class="top-bar">
+  <span class="brand">Source Changer</span>
+  <input #fileInput type="file" accept=".zip" hidden (change)="onFileChosen($event)" />
+  <button class="upload" (click)="onPick()">Upload sources (.zip)</button>
+  <span class="spacer"></span>
+  <span class="conn" [class.on]="connected" [class.off]="!connected">
+    {{ connected ? 'workspace connected' : 'disconnected' }}
+  </span>
+  <span class="wsid" *ngIf="workspaceId">workspace: {{ workspaceId.slice(0, 8) }}</span>
+</header>

@@ -1,0 +1,12 @@
+<div class="app">
+  <app-top-bar [workspaceId]="workspaceId" [connected]="connected" (fileSelected)="onUpload($event)"></app-top-bar>
+  <main class="panes">
+    <app-tree-panel [tree]="tree" (openFile)="onOpenFile($event)"></app-tree-panel>
+    <app-editor-panel (status)="status = $event"></app-editor-panel>
+  </main>
+  <app-footer-bar
+    [notifications]="notifications"
+    [status]="status"
+    [compiling]="compiling"
+    (compile)="onCompile()"></app-footer-bar>
+</div>

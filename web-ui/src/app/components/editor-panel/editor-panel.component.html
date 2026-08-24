@@ -1,0 +1,16 @@
+<div class="editor-panel">
+  <div class="tabs">
+    <div
+      *ngFor="let tab of tabs"
+      class="tab"
+      [class.active]="tab.path === activePath"
+      (click)="activate(tab)">
+      <span class="dirty" *ngIf="tab.dirty" title="unsaved changes">●</span>
+      <span class="label">{{ tab.name }}</span>
+      <span class="close" (click)="closeTab(tab, $event)" title="close">×</span>
+    </div>
+    <div class="tabs-empty" *ngIf="!tabs.length">no open files</div>
+  </div>
+  <div class="host" #editorHost></div>
+  <div class="empty" *ngIf="!tabs.length">Double-click a file in the tree to open it in a tab.</div>
+</div>

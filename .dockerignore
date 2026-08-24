@@ -1,0 +1,7 @@
+.git
+.pi
+**/target
+**/node_modules
+**/dist
+workspaces
+*.log

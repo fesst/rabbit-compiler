@@ -1,0 +1,10 @@
+target/**
+*/target/**
+.pi
+workspaces/
+web-ui/node_modules/
+web-ui/dist/
+web-ui/e2e/fixtures/
+web-ui/test-results/
+web-ui/playwright-report/
+*.log

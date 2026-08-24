@@ -1,0 +1,50 @@
+.footer-bar {
+  display: flex;
+  flex-direction: column;
+  height: 140px;
+  background: #1b1c20;
+  border-top: 1px solid #2c2d33;
+  font-size: 12px;
+}
+.notes {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 10px;
+}
+.note {
+  padding: 2px 0;
+  color: #c9ccd1;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.note .time { color: #6e7681; margin-right: 8px; font-family: monospace; }
+.note.info .time { color: #58a6ff; }
+.note.success { color: #57ab5a; }
+.note.error { color: #f85149; }
+.note.warn { color: #d29922; }
+.note.hint { color: #6e7681; font-style: italic; }
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  border-top: 1px solid #2c2d33;
+}
+.status {
+  flex: 1;
+  color: #9aa0a6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.compile {
+  background: #2f6feb;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 7px 16px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.compile:hover:not(:disabled) { background: #3b7bf0; }
+.compile:disabled { opacity: 0.6; cursor: default; }

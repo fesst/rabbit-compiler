@@ -1,0 +1,21 @@
+<div class="tree-panel">
+  <div class="head">Files</div>
+  <div class="body">
+    <ng-container *ngFor="let row of rows">
+      <div
+        class="row"
+        [class.folder]="row.node.type === 'folder'"
+        [class.file]="row.node.type === 'file'"
+        [style.padding-left.px]="row.depth * 14 + 6"
+        (click)="toggle(row.node)"
+        (dblclick)="onDblClick(row.node)"
+        [title]="row.node.path">
+        <span class="icon">{{ row.node.type === 'folder' ? (isExpanded(row.node) ? '▾' : '▸') : '·' }}</span>
+        <span class="name">{{ row.node.name }}</span>
+      </div>
+    </ng-container>
+    <div class="empty" *ngIf="!rows.length">
+      No workspace loaded.<br />Upload a .zip with the button above, then double-click a file.
+    </div>
+  </div>
+</div>

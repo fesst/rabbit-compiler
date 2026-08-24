@@ -1,0 +1,15 @@
+<footer class="footer-bar">
+  <div class="notes" #scroll>
+    <div *ngFor="let n of notifications" class="note" [class]="'note ' + n.kind">
+      <span class="time">{{ n.time | date: 'HH:mm:ss' }}</span>
+      <span class="text">{{ n.text }}</span>
+    </div>
+    <div class="note hint" *ngIf="!notifications.length">Notifications appear here. Errors from compilation and the workspace land in this panel and scroll automatically.</div>
+  </div>
+  <div class="actions">
+    <span class="status" [title]="status">{{ status || 'ready' }}</span>
+    <button class="compile" [disabled]="compiling" (click)="compile.emit()">
+      {{ compiling ? 'Compiling…' : 'Save and compile' }}
+    </button>
+  </div>
+</footer>

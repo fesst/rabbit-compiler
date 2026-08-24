@@ -1,0 +1,39 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  source-changer:
+    build:
+      context: .
+      dockerfile: source-changer/Dockerfile
+    ports:
+      - "8100:8100"
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      EXAMPLE_WORKSPACE_DIR: /workspaces
+      EXAMPLE_WORKER_LOCAL: "true"
+    volumes:
+      - workspaces:/workspaces
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  web-ui:
+    build:
+      context: .
+      dockerfile: web-ui/Dockerfile
+    ports:
+      - "8101:80"
+    depends_on:
+      - source-changer
+
+volumes:
+  workspaces:

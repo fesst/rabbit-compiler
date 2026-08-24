@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: gateway
+
+example:
+  scaling:
+    enabled: false
+    provider: noop # noop | cloud-controller
+    controller-url: http://localhost:9000
+    management-job:
+      delay-ms: 30000
+    timeout-ms: 300000
+    no-scaling-interval-ms: 30000
+    template:
+      source-changer: source-changer-template
+      compilation: compilation-template
+      completion: completion-template
+    max-count:
+      source-changer: 3
+      compilation: 5
+      completion: 5
+    min-count:
+      source-changer: 1
+      compilation: 1
+      completion: 1
+    limits:
+      models-memory-bytes-max: 1000000000
+      models-memory-bytes-min: 100000000
+      compilation-delivery-time-max: 30
+      compilation-delivery-time-min: 1
+      completion-delivery-time-max: 5
+      completion-delivery-time-min: 0.5

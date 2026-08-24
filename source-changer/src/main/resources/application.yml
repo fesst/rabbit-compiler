@@ -1,0 +1,39 @@
+server:
+  port: 8100
+
+spring:
+  application:
+    name: source-changer
+  rabbitmq:
+    host: localhost
+    virtual-host: /
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+example:
+  mq:
+    queue:
+      compilation:
+        request: requestCompilation
+      completion:
+        request: requestCompletion
+    routing-key: "" # user id for dedicated instances, empty for common
+    shared-cancellation:
+      exchange: sharedCancellationExchange
+      queue-prefix: sharedCancellationQueue
+
+  compilation-timeout: 600000
+  completion-timeout: 30000
+
+  workspace:
+    dir: ./workspaces
+    max-extracted-bytes: 104857600
+
+  worker:
+    local: false
+    maven-path: mvn
+
+  shared-cancellation:
+    request-lifetime: PT10M

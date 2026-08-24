@@ -1,0 +1,4 @@
+.app { display: flex; flex-direction: column; height: 100vh; }
+.panes { flex: 1; display: flex; min-height: 0; }
+app-tree-panel { width: 280px; min-width: 200px; border-right: 1px solid #2c2d33; overflow: auto; }
+app-editor-panel { flex: 1; min-width: 0; }
