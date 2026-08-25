@@ -5,6 +5,7 @@ COPY pom.xml ./
 COPY common-rabbitmq ./common-rabbitmq
 COPY gateway ./gateway
 COPY source-changer ./source-changer
+COPY worker ./worker
 RUN mvn -q -pl source-changer -am package -DskipTests
 
 # Runtime stage: maven image so the built-in local worker can compile

@@ -57,9 +57,15 @@ public class RabbitConfig {
 
   private AsyncRabbitTemplate asyncTemplate(ConnectionFactory connectionFactory, long receiveTimeout) {
     RabbitTemplate template = new RabbitTemplate(connectionFactory);
-    template.setMessageConverter(new Jackson2JsonMessageConverter());
+    template.setMessageConverter(jsonConverter());
     AsyncRabbitTemplate async = new AsyncRabbitTemplate(template);
     async.setReceiveTimeout(receiveTimeout);
     return async;
+  }
+
+  private Jackson2JsonMessageConverter jsonConverter() {
+    // trusted packages are constructor args in spring-amqp 2.4
+    // (java.util/java.lang are always trusted by the type mapper)
+    return new Jackson2JsonMessageConverter("example.rabbitmq");
   }
 }

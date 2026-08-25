@@ -22,6 +22,7 @@
         <module>common-rabbitmq</module>
         <module>gateway</module>
         <module>source-changer</module>
+        <module>worker</module>
     </modules>
 
     <properties>

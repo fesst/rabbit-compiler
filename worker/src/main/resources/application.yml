@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: worker
+  autoconfigure:
+    exclude: example.rabbitmq.common.config.CommonsRabbitmqConfiguration
+  rabbitmq:
+    host: localhost
+    virtual-host: /
+
+example:
+  mq:
+    queue:
+      compilation:
+        request: requestCompilation
+      completion:
+        request: requestCompletion
+    routing-key: ""
+
+  workspace:
+    dir: ./workspaces
+
+  worker:
+    maven-path: mvn
