@@ -187,3 +187,4 @@ NoScaling ──(metric < min)──▶ ScalingDown ──(instance gone | timeo
 
 `example.*` properties in each service's `application.yml` hold the exchange
 names, timeouts, cancellation lifetime and scaling limits.
+# rabbit-compiler
