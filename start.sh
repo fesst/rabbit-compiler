@@ -23,8 +23,22 @@ fail() { echo -e "\033[1;31m[start] ERROR:\033[0m $*" >&2; exit 1; }
 # --- actions -----------------------------------------------------------------
 case "${1:-up}" in
   stop)
-    docker compose down
+    "$ROOT/stop.sh" stack
     exit 0
+    ;;
+  dev)
+    "$0"
+    log "Starting Angular dev server on http://localhost:8101 ..."
+    nohup bash -c 'cd "$1/web-ui" && npx ng serve --port 8101 --proxy-config proxy.conf.json' _ "$ROOT" > /tmp/ngserve.log 2>&1 &
+    echo "  ng serve pid: $!  (log: /tmp/ngserve.log)"
+    for _ in $(seq 1 60); do
+      if curl -s -o /dev/null --max-time 2 http://localhost:8101/ 2>/dev/null; then
+        log "✅ Dev server up: http://localhost:8101 (proxies /api and /ws to the docker backend)"
+        exit 0
+      fi
+      sleep 1
+    done
+    fail "Dev server did not come up; check /tmp/ngserve.log"
     ;;
   logs)
     docker compose logs -f --tail=100

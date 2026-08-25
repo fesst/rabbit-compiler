@@ -17,6 +17,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -37,20 +38,22 @@ public class CompilationWorker {
 
   private static final Logger log = LoggerFactory.getLogger(CompilationWorker.class);
   private static final Pattern WORKSPACE_PREFIX = Pattern.compile("^workspace-");
-  private static final long BUILD_TIMEOUT_SECONDS = 300;
   private static final int MESSAGE_TAIL_CHARS = 2000;
 
   private final RabbitTemplate rabbitTemplate;
   private final Path workspaceDir;
   private final String mavenPath;
+  private final long buildTimeoutSeconds;
 
   public CompilationWorker(
       RabbitTemplate rabbitTemplate,
       @Value("${example.workspace.dir:./workspaces}") String workspaceDir,
-      @Value("${example.worker.maven-path:mvn}") String mavenPath) {
+      @Value("${example.worker.maven-path:mvn}") String mavenPath,
+      @Value("${example.worker.build-timeout:300}") long buildTimeoutSeconds) {
     this.rabbitTemplate = rabbitTemplate;
     this.workspaceDir = Path.of(workspaceDir).toAbsolutePath().normalize();
     this.mavenPath = mavenPath;
+    this.buildTimeoutSeconds = buildTimeoutSeconds;
   }
 
   @RabbitListener(queues = "${example.mq.queue.compilation.request:requestCompilation}")
@@ -93,18 +96,27 @@ public class CompilationWorker {
     builder.directory(dir.toFile());
     builder.redirectErrorStream(true);
     Process process = builder.start();
-    String output;
-    try (InputStream in = process.getInputStream()) {
-      output = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-    }
-    if (!process.waitFor(BUILD_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    Thread reader = new Thread(() -> {
+      try (InputStream in = process.getInputStream()) {
+        in.transferTo(output);
+      } catch (IOException ignored) {
+        // stream closed when the process is destroyed
+      }
+    }, "maven-output-reader");
+    reader.setDaemon(true);
+    reader.start();
+    if (!process.waitFor(buildTimeoutSeconds, TimeUnit.SECONDS)) {
       process.destroyForcibly();
+      reader.join(2000);
       return new CompilationResultDto(false, CompilationResultDto.ResultType.FAILURE, "maven build timed out");
     }
+    reader.join(5000);
+    String text = output.toString(StandardCharsets.UTF_8);
     if (process.exitValue() == 0) {
       return new CompilationResultDto(true, CompilationResultDto.ResultType.SUCCESS, "maven compile ok");
     }
-    return new CompilationResultDto(false, CompilationResultDto.ResultType.FAILURE, tail(output));
+    return new CompilationResultDto(false, CompilationResultDto.ResultType.FAILURE, tail(text));
   }
 
   private CompilationResultDto compileWithJavac(Path dir) throws IOException {

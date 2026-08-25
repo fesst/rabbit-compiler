@@ -36,7 +36,7 @@ public class CompletionWorker {
   public void onCompletionRequest(CompletionRequestDto request, Message message) {
     log.info("completion request received: resourceId={}", request.resourceId());
     Set<String> words = new LinkedHashSet<>();
-    Matcher matcher = WORD.matcher(request.text());
+    Matcher matcher = WORD.matcher(request.text() == null ? "" : request.text());
     while (matcher.find() && words.size() < MAX_SUGGESTIONS) {
       words.add(matcher.group());
     }

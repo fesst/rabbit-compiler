@@ -13,6 +13,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -40,20 +41,22 @@ public class LocalWorker {
 
     private static final Pattern WORD = Pattern.compile("[A-Za-z_][A-Za-z0-9_]{1,}");
     private static final int MAX_SUGGESTIONS = 20;
-    private static final long BUILD_TIMEOUT_SECONDS = 300;
     private static final int MESSAGE_TAIL_CHARS = 2000;
 
     private final WorkspaceStorage storage;
     private final boolean enabled;
     private final String mavenPath;
+    private final long buildTimeoutSeconds;
 
     public LocalWorker(
             WorkspaceStorage storage,
             @Value("${example.worker.local:false}") boolean enabled,
-            @Value("${example.worker.maven-path:mvn}") String mavenPath) {
+            @Value("${example.worker.maven-path:mvn}") String mavenPath,
+            @Value("${example.worker.build-timeout:300}") long buildTimeoutSeconds) {
         this.storage = storage;
         this.enabled = enabled;
         this.mavenPath = mavenPath;
+        this.buildTimeoutSeconds = buildTimeoutSeconds;
     }
 
     public boolean isEnabled() {
@@ -75,7 +78,7 @@ public class LocalWorker {
     /** Suggests identifiers found in the request text (stub completion). */
     public CompletionResultDto complete(String workspaceId, CompletionRequestDto request) {
         Set<String> words = new LinkedHashSet<>();
-        Matcher matcher = WORD.matcher(request.text());
+        Matcher matcher = WORD.matcher(request.text() == null ? "" : request.text());
         while (matcher.find() && words.size() < MAX_SUGGESTIONS) {
             words.add(matcher.group());
         }
@@ -87,18 +90,27 @@ public class LocalWorker {
         builder.directory(dir.toFile());
         builder.redirectErrorStream(true);
         Process process = builder.start();
-        String output;
-        try (InputStream in = process.getInputStream()) {
-            output = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        }
-        if (!process.waitFor(BUILD_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        Thread reader = new Thread(() -> {
+            try (InputStream in = process.getInputStream()) {
+                in.transferTo(output);
+            } catch (IOException ignored) {
+                // stream closed when the process is destroyed
+            }
+        }, "maven-output-reader");
+        reader.setDaemon(true);
+        reader.start();
+        if (!process.waitFor(buildTimeoutSeconds, TimeUnit.SECONDS)) {
             process.destroyForcibly();
+            reader.join(2000);
             return new CompilationResultDto(false, CompilationResultDto.ResultType.FAILURE, "maven build timed out");
         }
+        reader.join(5000);
+        String text = output.toString(StandardCharsets.UTF_8);
         if (process.exitValue() == 0) {
             return new CompilationResultDto(true, CompilationResultDto.ResultType.SUCCESS, "maven compile ok");
         }
-        return new CompilationResultDto(false, CompilationResultDto.ResultType.FAILURE, tail(output));
+        return new CompilationResultDto(false, CompilationResultDto.ResultType.FAILURE, tail(text));
     }
 
     private CompilationResultDto compileWithJavac(Path dir) throws IOException {

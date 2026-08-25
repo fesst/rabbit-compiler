@@ -29,7 +29,7 @@ class LocalWorkerTest {
     @BeforeEach
     void setUp() throws IOException {
         storage = new WorkspaceStorage(tempDir.resolve("root").toString(), 1_048_576);
-        worker = new LocalWorker(storage, true, "mvn");
+        worker = new LocalWorker(storage, true, "mvn", 60);
     }
 
     private String workspaceWith(String... files) throws IOException {
@@ -55,7 +55,7 @@ class LocalWorkerTest {
     @Test
     void enabledFlagReflectsConfiguration() throws IOException {
         assertThat(worker.isEnabled()).isTrue();
-        assertThat(new LocalWorker(storage, false, "mvn").isEnabled()).isFalse();
+        assertThat(new LocalWorker(storage, false, "mvn", 60).isEnabled()).isFalse();
     }
 
     @Test
@@ -115,5 +115,58 @@ class LocalWorkerTest {
         CompletionResultDto result = worker.complete(id, new CompletionRequestDto("A.java", 1, 1, text));
 
         assertThat(result.suggestions()).hasSize(20);
+    }
+
+    @Test
+    void mavenProjectCompilesWithFakeMvn() throws Exception {
+        Path mvn = tempDir.resolve("fake-mvn");
+        Files.writeString(mvn, "#!/usr/bin/env bash\necho fake-mvn-ran\nexit 0");
+        mvn.toFile().setExecutable(true);
+        LocalWorker mavenWorker = new LocalWorker(storage, true, mvn.toString(), 60);
+        String id = workspaceWith("pom.xml");
+
+        CompilationResultDto result = mavenWorker.compile(id);
+
+        assertThat(result.success()).isTrue();
+        assertThat(result.resultType()).isEqualTo(CompilationResultDto.ResultType.SUCCESS);
+        assertThat(result.message()).isEqualTo("maven compile ok");
+    }
+
+    @Test
+    void mavenFailureReturnsOutputTail() throws Exception {
+        Path mvn = tempDir.resolve("fake-mvn-fail");
+        Files.writeString(mvn, "#!/usr/bin/env bash\necho line1\necho maven error: boom\nexit 1");
+        mvn.toFile().setExecutable(true);
+        LocalWorker mavenWorker = new LocalWorker(storage, true, mvn.toString(), 60);
+        String id = workspaceWith("pom.xml");
+
+        CompilationResultDto result = mavenWorker.compile(id);
+
+        assertThat(result.success()).isFalse();
+        assertThat(result.message()).contains("maven error: boom");
+    }
+
+    @Test
+    void mavenTimeoutFails() throws Exception {
+        Path mvn = tempDir.resolve("fake-mvn-slow");
+        Files.writeString(mvn, "#!/usr/bin/env bash\nsleep 30\nexit 0");
+        mvn.toFile().setExecutable(true);
+        LocalWorker mavenWorker = new LocalWorker(storage, true, mvn.toString(), 1);
+        String id = workspaceWith("pom.xml");
+
+        CompilationResultDto result = mavenWorker.compile(id);
+
+        assertThat(result.success()).isFalse();
+        assertThat(result.message()).isEqualTo("maven build timed out");
+    }
+
+    @Test
+    void completeWithNullTextReturnsEmptySuggestions() throws Exception {
+        String id = workspaceWith("A.java");
+
+        CompletionResultDto result = worker.complete(id, new CompletionRequestDto("A.java", 1, 1, null));
+
+        assertThat(result.success()).isTrue();
+        assertThat(result.suggestions()).isEmpty();
     }
 }

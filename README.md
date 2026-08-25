@@ -86,14 +86,22 @@ The stack (see `docker-compose.yml`):
 
 | Service         | Port (host)        | Notes                                                    |
 | --------------- | ------------------ | -------------------------------------------------------- |
-| `web-ui`        | 8101               | nginx serves the Angular build, proxies `/api` and `/ws` to the backend |
+| `web-ui`        | 4200               | nginx serves the Angular build, proxies `/api` and `/ws` to the backend |
 | `source-changer` | 8100               | Spring Boot; workspaces persisted in the `workspaces` volume |
+| `worker`        | -                  | consumes `requestCompilation`/`requestCompletion`, compiles shared workspaces (Maven/javac), replies over RabbitMQ |
 | `rabbitmq`      | 5672 AMQP / 15672 management UI | broker for compile/completion requests; `guest/guest` login |
 
 Both images build from source: the backend is compiled with JDK 17
 (`source-changer/Dockerfile`), the frontend with Node 22
-(`web-ui/Dockerfile`). Compilation and completion still need a worker
-answering the request queues to return real results.
+(`web-ui/Dockerfile`). The `worker` image answers the request
+queues so compilation and completion return real results.
+
+Operations:
+
+    ./start.sh            # colima + build + stack up (web UI on http://192.168.1.125:4200)
+    ./start.sh dev        # ... and also start the Angular dev server on :8101
+    ./stop.sh             # stop everything: compose stack, dev servers, colima
+    ./stop.sh restart     # stop everything, then start it again
 
 ## Kubernetes (k3s cluster)
 
