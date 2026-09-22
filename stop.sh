@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-# ============================================================================
-# stop.sh — stop (and restart) the example-rabbit system:
-#   docker compose stack, dev servers (ng serve / backend jars) and colima.
-#
-#   ./stop.sh               stop everything (stack + dev servers + colima)
-#   ./stop.sh stack         stop only the docker compose stack
-#   ./stop.sh dev           kill only the dev servers
-#   ./stop.sh colima        stop only the colima VM
-#   ./stop.sh restart       stop everything, then start it again (start.sh)
-#   ./stop.sh status        show what is running
-# ============================================================================
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"

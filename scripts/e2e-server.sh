@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Boots the backend jar and the Angular dev server for Playwright e2e.
-# Rebuilds the backend jar when sources are newer. Playwright starts this
-# (or reuses an already-running stack on :8101).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -16,7 +13,6 @@ fi
 
 WS_DIR="$(mktemp -d)"
 echo "[e2e] backend workspace dir: $WS_DIR" >&2
-# example.worker.local=true: real in-process compilation (maven) without a broker
 java -jar "$JAR" \
   --example.workspace.dir="$WS_DIR" \
   --example.worker.local=true \

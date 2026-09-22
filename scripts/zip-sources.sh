@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# Zips the current solution (this repository) for use as the web IDE upload
-# fixture in the Playwright e2e tests.
-#
-#   scripts/zip-sources.sh              # write web-ui/e2e/fixtures/sources.zip
-#   scripts/zip-sources.sh /tmp/x.zip   # custom output path
-#   scripts/zip-sources.sh --check      # access-only: report without writing
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

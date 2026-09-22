@@ -1,23 +1,30 @@
 #!/usr/bin/env bash
-# ============================================================================
-# test-all.sh — run every test suite in the repo:
-#   1. Backend:  mvn test (common-rabbitmq + source-changer + worker, incl.
-#                the JaCoCo 80% coverage gate) — inside a Maven container
-#                because the host has no JDK.
-#   2. Frontend: Karma/Jasmine unit tests (headless Chrome).
-#   3. E2E:      Playwright against the docker stack (web UI on :4200,
-#                compilation routed through RabbitMQ to the worker service).
-# ============================================================================
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
-CHROME_BIN="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+CHROME_BIN="${CHROME_BIN:-}"
+if [[ -z "$CHROME_BIN" ]]; then
+  for candidate in \
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+    /usr/bin/google-chrome-stable \
+    /usr/bin/google-chrome \
+    /usr/bin/chromium; do
+    if [[ -x "$candidate" ]]; then
+      CHROME_BIN="$candidate"
+      break
+    fi
+  done
+fi
+if [[ -z "$CHROME_BIN" ]]; then
+  echo "CHROME_BIN is not set and no Chrome/Chromium was found" >&2
+  exit 1
+fi
 PASS=0
 FAIL=0
 
-report() { # $1=name $2=exit code
+report() {
   if [ "$2" = "0" ]; then
     echo "✅ $1"
     PASS=$((PASS + 1))
@@ -27,7 +34,6 @@ report() { # $1=name $2=exit code
   fi
 }
 
-# --- 1/3 backend -------------------------------------------------------------
 echo "=== [1/3] Backend: mvn test (common-rabbitmq + source-changer + worker) ==="
 docker run --rm -v "$ROOT":/build -w /build maven:3.9-eclipse-temurin-17 \
   mvn -pl source-changer,worker -am test > /tmp/testall-backend.log 2>&1
@@ -36,7 +42,6 @@ grep -E "Tests run: [0-9]+, Failures" /tmp/testall-backend.log | tail -4
 grep -E "BUILD (SUCCESS|FAILURE)" /tmp/testall-backend.log | tail -1
 report "backend mvn test" $BACKEND_OK
 
-# --- 2/3 frontend unit --------------------------------------------------------
 echo "=== [2/3] Frontend unit: Karma/Jasmine ==="
 if [ ! -d web-ui/node_modules ]; then
   echo "(installing web-ui deps first)"
@@ -47,7 +52,6 @@ KARMA_OK=$?
 grep -E "TOTAL: [0-9]+" /tmp/testall-karma.log | tail -1
 report "frontend karma unit" $KARMA_OK
 
-# --- 3/3 e2e ------------------------------------------------------------------
 echo "=== [3/3] E2E: Playwright against the docker stack ==="
 if ! docker compose ps --format '{{.Name}}' 2>/dev/null | grep -q source-changer; then
   echo "(stack not running — starting it)"
@@ -65,7 +69,6 @@ pkill -f 'ng serve' 2>/dev/null || true
 tail -6 /tmp/testall-e2e.log
 report "playwright e2e" $E2E_OK
 
-# --- summary ------------------------------------------------------------------
 echo
 echo "=============================="
 echo "SUMMARY: $PASS passed, $FAIL failed"

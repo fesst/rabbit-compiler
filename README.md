@@ -109,7 +109,7 @@ The same stack runs on the local k3s cluster (Flux GitOps, Traefik ingress):
 
 - Manifests: `$SIMPLEX/cluster/local/apps/examples/example-rabbit/`
   (namespace `example-rabbit`), see lifetracker
-  [req 016](https://git.local/platform/lifetracker/src/branch/master/wiki-it/motley-simplex/reqs/016-example-rabbit-k3s-traefik.md)
+  [req 016](https://simplex.iurii.space/git/platform/lifetracker/src/branch/master/wiki-it/motley-simplex/reqs/016-example-rabbit-k3s-traefik.md)
   for the cluster implementation (storage, credentials, mirroring).
 - Access: `http://rabbit.local` (ingress, needs the `/etc/hosts` entry) or
   `http://localhost:8101` via
